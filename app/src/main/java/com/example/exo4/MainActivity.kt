@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.Gson
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,15 +20,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSpinner() {
         val spinner: Spinner = findViewById(R.id.spinner)
-        val adapter = ArrayAdapter.createFromResource(
+
+        // Charger les données depuis le fichier JSON
+        val laserrunItems = loadJsonFromFile("laserrun.json")
+
+        // Extraire uniquement les `id` des objets pour afficher dans le Spinner
+        val ids = mutableListOf("Veuillez sélectionner une catégorie") // Message par défaut
+        ids.addAll(laserrunItems.map { it.id })
+
+        // Créer un ArrayAdapter pour le Spinner
+        val adapter = ArrayAdapter(
             this,
-            R.array.categories_array,
-            android.R.layout.simple_spinner_item
+            android.R.layout.simple_spinner_item, // Layout simple pour l'élément
+            ids // Utiliser les `id` comme éléments à afficher
         ).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) // Layout pour le menu déroulant
         }
+
+        // Associer l'adaptateur au Spinner
         spinner.adapter = adapter
 
+        // Gérer la sélection d'éléments dans le Spinner
         spinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
                 if (position == 0) {
@@ -46,7 +59,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupNavigation() {
         val buttonGps: Button = findViewById(R.id.button_gps)
-        val buttonStat: Button = findViewById(R.id.button2)
+        val buttonStat: Button = findViewById(R.id.button_stats)
 
         // Navigation vers GPSActivity
         buttonGps.setOnClickListener {
@@ -60,4 +73,21 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
+
+    // Fonction pour lire et parser le fichier JSON
+    private fun loadJsonFromFile(filename: String): List<LaserrunItem> {
+        val jsonString = assets.open(filename).bufferedReader().use { it.readText() }
+        val gson = Gson()
+        return gson.fromJson(jsonString, Array<LaserrunItem>::class.java).toList()
+    }
 }
+
+// Modèle de données correspondant au JSON
+data class LaserrunItem(
+    val id: String,
+    val name: String,
+    val initialDistance: Int,
+    val lapDistance: Int,
+    val lapCount: Int,
+    val shootDistance: Int
+)

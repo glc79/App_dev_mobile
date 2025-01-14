@@ -1,0 +1,26 @@
+[
+  {
+    "id": "2025SENIOR",
+    "name": "Senior",
+    "initialDistance": 600,
+    "lapDistance": 600,
+    "lapCount": 5,
+    "shootDistance": 10
+  },
+  {
+    "id": "2025M40",
+    "name" : "M40",
+    "initialDistance": 20,
+    "lapDistance": 600,
+    "lapCount": 4,
+    "shootDistance": 10
+  },
+  {
+    "id": "2025M60",
+    "name" : "M60",
+    "initialDistance": 20,
+    "lapDistance": 600,
+    "lapCount": 2,
+    "shootDistance": 5
+  }
+]
