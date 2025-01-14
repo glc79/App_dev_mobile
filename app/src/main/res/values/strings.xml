@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">exo4</string>
+    <string-array name="categories_array">
+        <item>Veuillez choisir une catégorie</item>
+        <item>2025SENIOR</item>
+        <item>2025M40</item>
+        <item>2025M60</item>
+    </string-array>
+</resources>
