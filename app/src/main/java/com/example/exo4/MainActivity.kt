@@ -1,93 +1,128 @@
+// MainActivity.kt
 package com.example.exo4
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.example.exo4.model.LaserRunCategory
+import com.example.exo4.network.RetrofitInstance
 import com.google.gson.Gson
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
+// MainActivity.kt
 
 class MainActivity : AppCompatActivity() {
+    // Propriété pour gérer la demande de permission
+    private lateinit var locationPermissionRequest: ActivityResultLauncher<Array<String>>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setupSpinner()
-        setupNavigation()
-    }
-
-    private fun setupSpinner() {
-        val spinner: Spinner = findViewById(R.id.spinner)
-
-        // Charger les données depuis le fichier JSON
-        val laserrunItems = loadJsonFromFile("laserrun.json")
-
-        // Extraire uniquement les `id` des objets pour afficher dans le Spinner
-        val ids = mutableListOf("Veuillez sélectionner une catégorie") // Message par défaut
-        ids.addAll(laserrunItems.map { it.id })
-
-        // Créer un ArrayAdapter pour le Spinner
-        val adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_item, // Layout simple pour l'élément
-            ids // Utiliser les `id` comme éléments à afficher
-        ).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) // Layout pour le menu déroulant
+        // Initialisation du launcher de permission
+        locationPermissionRequest = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            handlePermissionsResult(permissions)
         }
 
-        // Associer l'adaptateur au Spinner
-        spinner.adapter = adapter
+        fetchLaserrunItems()
+    }
 
-        // Gérer la sélection d'éléments dans le Spinner
-        spinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
-                if (position == 0) {
-                    Toast.makeText(applicationContext, "Veuillez sélectionner une catégorie", Toast.LENGTH_SHORT).show()
+    private fun fetchLaserrunItems() {
+        RetrofitInstance.apiService.getLaserrunItems().enqueue(object : Callback<List<LaserRunCategory>> {
+            override fun onResponse(call: Call<List<LaserRunCategory>>, response: Response<List<LaserRunCategory>>) {
+                if (response.isSuccessful) {
+                    val categories = response.body()
+                    if (categories != null) {
+                        updateSpinnerWithCategories(categories)
+                    }
                 } else {
-                    val selectedItem = parent.getItemAtPosition(position).toString()
-                    Toast.makeText(applicationContext, "Sélection : $selectedItem", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(applicationContext,
+                        "Erreur: ${response.code()} - ${response.message()}",
+                        Toast.LENGTH_SHORT).show()
                 }
             }
 
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>) {
-                Toast.makeText(applicationContext, "Aucune sélection", Toast.LENGTH_SHORT).show()
+            override fun onFailure(call: Call<List<LaserRunCategory>>, t: Throwable) {
+                Toast.makeText(applicationContext,
+                    "Erreur réseau: ${t.message}",
+                    Toast.LENGTH_SHORT).show()
             }
+        })
+        setupNavigation()
+    }
+
+    private fun updateSpinnerWithCategories(categories: List<LaserRunCategory>) {
+        val spinner: Spinner = findViewById(R.id.spinner)
+        val categoryNames = categories.map { it.name }
+
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            categoryNames
+        ).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
+
+        spinner.adapter = adapter
     }
 
     private fun setupNavigation() {
         val buttonGps: Button = findViewById(R.id.button_gps)
         val buttonStat: Button = findViewById(R.id.button_stats)
 
-        // Navigation vers GPSActivity
         buttonGps.setOnClickListener {
-            val intent = Intent(this, GPSActivity::class.java)
-            startActivity(intent)
+            checkAndRequestPermissionsForGps()
         }
 
-        // Navigation vers StatistiqueActivity
         buttonStat.setOnClickListener {
             val intent = Intent(this, StatistiqueActivity::class.java)
             startActivity(intent)
         }
     }
 
-    // Fonction pour lire et parser le fichier JSON
-    private fun loadJsonFromFile(filename: String): List<LaserrunItem> {
-        val jsonString = assets.open(filename).bufferedReader().use { it.readText() }
-        val gson = Gson()
-        return gson.fromJson(jsonString, Array<LaserrunItem>::class.java).toList()
+    private fun checkAndRequestPermissionsForGps() {
+        if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ) {
+            navigateToGpsActivity()
+        } else {
+            locationPermissionRequest.launch(
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    private fun handlePermissionsResult(permissions: Map<String, Boolean>) {
+        if (permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        ) {
+            Toast.makeText(this, "Permission accordée", Toast.LENGTH_SHORT).show()
+            navigateToGpsActivity()
+        } else {
+            Toast.makeText(
+                this,
+                "Permission refusée. Impossible d'accéder à la carte.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun navigateToGpsActivity() {
+        val intent = Intent(this, GPSActivity::class.java)
+        startActivity(intent)
     }
 }
-
-// Modèle de données correspondant au JSON
-data class LaserrunItem(
-    val id: String,
-    val name: String,
-    val initialDistance: Int,
-    val lapDistance: Int,
-    val lapCount: Int,
-    val shootDistance: Int
-)

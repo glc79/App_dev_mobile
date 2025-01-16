@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
     <application
         android:allowBackup="true"
@@ -12,27 +17,27 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Exo4"
         tools:targetApi="31">
-
-        <!-- Main Activity -->
+        <activity
+            android:name=".ShootingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CourrirActivity"
+            android:exported="false" /> <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- GPS Activity -->
+        </activity> <!-- GPS Activity -->
         <activity
             android:name=".GPSActivity"
-            android:exported="false" />
-
-        <!-- Statistique Activity -->
+            android:exported="false" /> <!-- Statistique Activity -->
         <activity
             android:name=".StatistiqueActivity"
             android:exported="false" />
-
     </application>
 
 </manifest>

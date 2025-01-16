@@ -12,8 +12,9 @@
         android:id="@+id/button_stats"
         android:layout_width="268dp"
         android:layout_height="102dp"
-        android:layout_marginTop="412dp"
+        android:layout_marginTop="464dp"
         android:text="Statistique"
+        android:textSize="35sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/spinner" />
@@ -23,6 +24,7 @@
         android:layout_width="187dp"
         android:layout_height="50dp"
         android:layout_marginTop="22dp"
+        android:spinnerMode="dropdown"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintStart_toStartOf="parent"
@@ -47,9 +49,27 @@
         android:layout_marginTop="13dp"
         android:layout_marginBottom="116dp"
         android:text="GPS"
+        android:textSize="35sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_stats" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="280dp"
+        android:layout_height="202dp"
+        android:layout_marginStart="84dp"
+        android:layout_marginTop="80dp"
+        android:layout_marginEnd="84dp"
+        android:layout_marginBottom="130dp"
+        android:text="Courrir"
+        android:textSize="50sp"
+        app:layout_constraintBottom_toTopOf="@+id/button_stats"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spinner"
+        app:layout_constraintVertical_bias="1.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
