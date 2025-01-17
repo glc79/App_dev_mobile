@@ -8,68 +8,62 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+
     <Button
         android:id="@+id/button_stats"
         android:layout_width="268dp"
         android:layout_height="102dp"
-        android:layout_marginTop="464dp"
+        android:layout_marginTop="25dp"
+        android:layout_marginBottom="13dp"
         android:text="Statistique"
         android:textSize="35sp"
+        app:layout_constraintBottom_toTopOf="@+id/button_gps"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spinner" />
-
-    <Spinner
-        android:id="@+id/spinner"
-        android:layout_width="187dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="22dp"
-        android:spinnerMode="dropdown"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cat_course" />
-
-    <TextView
-        android:id="@+id/cat_course"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="124dp"
-        android:text="Veuillez choisir une catégorie : "
-        android:textSize="24sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.504"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/button_historique" />
 
     <Button
         android:id="@+id/button_gps"
-        android:layout_width="269dp"
-        android:layout_height="109dp"
+        android:layout_width="268dp"
+        android:layout_height="102dp"
         android:layout_marginTop="13dp"
-        android:layout_marginBottom="116dp"
+        android:layout_marginBottom="110dp"
         android:text="GPS"
         android:textSize="35sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.469"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_stats" />
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/button_category"
         android:layout_width="280dp"
         android:layout_height="202dp"
         android:layout_marginStart="84dp"
-        android:layout_marginTop="80dp"
         android:layout_marginEnd="84dp"
-        android:layout_marginBottom="130dp"
-        android:text="Courrir"
+        android:layout_marginBottom="236dp"
+        android:text="Courir"
         android:textSize="50sp"
         app:layout_constraintBottom_toTopOf="@+id/button_stats"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/button_historique"
+        android:layout_width="268dp"
+        android:layout_height="102dp"
+        android:layout_marginStart="84dp"
+        android:layout_marginTop="109dp"
+        android:layout_marginEnd="84dp"
+        android:layout_marginBottom="25dp"
+        android:text="Historique"
+        android:textSize="35sp"
+        app:layout_constraintBottom_toTopOf="@+id/button_stats"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spinner"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintTop_toBottomOf="@+id/button_category"
+        app:layout_constraintVertical_bias="0.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
