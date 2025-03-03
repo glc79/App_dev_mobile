@@ -2,6 +2,7 @@ package com.example.exo4
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -9,8 +10,12 @@ import com.example.exo4.utils.ChronometreManager
 
 class CourirActivity : AppCompatActivity() {
     private lateinit var chronoManager: ChronometreManager
+    private lateinit var buttonNextPhase: Button
+    private lateinit var buttonFinish: Button
     private var remainingLaps: Int = 0
-    private var isInShootingPhase = false
+    private var totalMissedShots = 0
+    private var totalShootingTime: Long = 0
+    private var savedTotalTime: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,12 +25,26 @@ class CourirActivity : AppCompatActivity() {
         remainingLaps = intent.getIntExtra("LAP_COUNT", 0)
         val initialDistance = intent.getIntExtra("INITIAL_DISTANCE", 0)
         val shootDistance = intent.getIntExtra("SHOOT_DISTANCE", 0)
+        
+        // Récupérer les données du tir précédent
+        totalMissedShots = intent.getIntExtra("MISSED_SHOTS", 0)
+        totalShootingTime = intent.getLongExtra("TOTAL_SHOOTING_TIME", 0)
+        savedTotalTime = intent.getLongExtra("SAVED_TOTAL_TIME", 0)
+        val isLastLapComplete = intent.getBooleanExtra("IS_LAST_LAP_COMPLETE", false)
+
+        // Initialisation des vues
+        buttonNextPhase = findViewById(R.id.button_next_phase)
+        buttonFinish = findViewById(R.id.button_finish)
 
         // Initialisation du chronomètre
         chronoManager = ChronometreManager()
         chronoManager.setDisplayView(findViewById(R.id.text_chronometer))
+        if (savedTotalTime > 0) {
+            chronoManager.setInitialTime(savedTotalTime)
+        }
 
         setupUI(remainingLaps, initialDistance, shootDistance)
+        setupButtons(isLastLapComplete)
         startTraining()
     }
 
@@ -34,50 +53,71 @@ class CourirActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.distance_text_view).text = "Distance initiale : $initialDistance m"
         findViewById<TextView>(R.id.shoot_distance_text_view).text = "Distance de tir : $shootDistance m"
 
-        val nextButton: Button = findViewById(R.id.button_next_phase)
-        nextButton.setOnClickListener {
-            handleNextPhase()
-        }
+        updateUIForPhase()
     }
 
-    private fun startTraining() {
-        chronoManager.start()
+    private fun setupButtons(isLastLapComplete: Boolean) {
+        buttonNextPhase.setOnClickListener {
+            handleNextPhase()
+        }
+
+        buttonFinish.setOnClickListener {
+            handleFinish()
+        }
+
+        // Afficher le bouton Terminer uniquement après le dernier tir
+        buttonFinish.visibility = if (remainingLaps == 1 && isLastLapComplete) View.VISIBLE else View.GONE
+        buttonNextPhase.visibility = if (remainingLaps == 1 && isLastLapComplete) View.GONE else View.VISIBLE
     }
 
     private fun handleNextPhase() {
-        if (isInShootingPhase) {
-            // Fin de la phase de tir
-            val shootingSuccess = chronoManager.endShootingSession(5) // À adapter selon les cibles touchées
-            if (!shootingSuccess) {
-                // Alerter l'utilisateur du dépassement de temps
-            }
-            
-            remainingLaps--
-            if (remainingLaps <= 0) {
-                finishTraining()
-            }
-        } else {
-            // Début de la phase de tir
-            chronoManager.recordLapTime()
-            chronoManager.startShootingSession()
+        val currentTotalTime = chronoManager.getTotalTime()
+        chronoManager.stop() // Arrêter le chronomètre avant de passer à la zone de tir
+        savedTotalTime = currentTotalTime // Sauvegarder le temps actuel
+        
+        val intent = Intent(this, ZoneDeTirActivity::class.java).apply {
+            putExtra("REMAINING_LAPS", remainingLaps)
+            putExtra("TOTAL_TIME", currentTotalTime)
+            putExtra("CATEGORY_ID", getIntent().getStringExtra("CATEGORY_ID"))
+            putExtra("TOTAL_MISSED_SHOTS", totalMissedShots)
+            putExtra("TOTAL_SHOOTING_TIME", totalShootingTime)
+            putExtra("INITIAL_DISTANCE", getIntent().getIntExtra("INITIAL_DISTANCE", 0))
+            putExtra("SHOOT_DISTANCE", getIntent().getIntExtra("SHOOT_DISTANCE", 0))
+            putExtra("SAVED_TOTAL_TIME", currentTotalTime)
         }
-        isInShootingPhase = !isInShootingPhase
-        updateUIForPhase()
+        startActivity(intent)
+        finish()
+    }
+
+    private fun handleFinish() {
+        chronoManager.stop()
+        val finalTime = chronoManager.getTotalTime()
+        savedTotalTime = finalTime // Sauvegarder le temps final
+        
+        val intent = Intent(this, ResultActivity::class.java).apply {
+            putExtra("TOTAL_TIME", finalTime)
+            putExtra("MISSED_SHOTS", totalMissedShots)
+            putExtra("TOTAL_SHOOTING_TIME", totalShootingTime)
+            putExtra("CATEGORY_ID", getIntent().getStringExtra("CATEGORY_ID"))
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun startTraining() {
+        if (savedTotalTime > 0) {
+            chronoManager.setInitialTime(savedTotalTime)
+        }
+        chronoManager.start()
     }
 
     private fun updateUIForPhase() {
         val nextButton: Button = findViewById(R.id.button_next_phase)
-        nextButton.text = if (isInShootingPhase) "Terminer le tir" else "Commencer le tir"
+        nextButton.text = "Commencer le tir"
     }
 
-    private fun finishTraining() {
-        val results = chronoManager.getResults()
-        val intent = Intent(this, ResultActivity::class.java).apply {
-            putExtra("TOTAL_TIME", results.totalTime)
-            putExtra("LAP_TIMES", results.lapTimes.toLongArray())
-            putExtra("SHOOTING_TIMES", results.shootingTimes.toLongArray())
-        }
-        startActivity(intent)
-        finish()
+    override fun onDestroy() {
+        super.onDestroy()
+        chronoManager.stop()
     }
 }

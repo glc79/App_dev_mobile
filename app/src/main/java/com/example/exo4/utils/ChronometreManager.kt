@@ -4,6 +4,9 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.TextView
 import java.util.concurrent.TimeUnit
+import android.os.SystemClock
+import java.util.Timer
+import java.util.TimerTask
 
 class ChronometreManager {
     private var startTime: Long = 0
@@ -18,26 +21,35 @@ class ChronometreManager {
         }
     }
 
-    private var chronoTextView: TextView? = null
+    private var displayView: TextView? = null
     private val lapTimes = mutableListOf<Long>()
     private val shootingTimes = mutableListOf<Long>()
     private var shootingStartTime: Long = 0
+    private var timer: Timer? = null
+    private var totalTime: Long = 0
+    private var currentElapsedTime: Long = 0
 
-    fun setDisplayView(textView: TextView) {
-        chronoTextView = textView
+    fun setDisplayView(view: TextView) {
+        displayView = view
+        updateDisplay()
     }
 
     fun start() {
         if (!isRunning) {
-            startTime = System.currentTimeMillis()
+            startTime = SystemClock.elapsedRealtime()
             isRunning = true
-            handler.post(updateRunnable)
+            startTimer()
         }
     }
 
     fun stop() {
-        isRunning = false
-        handler.removeCallbacks(updateRunnable)
+        if (isRunning) {
+            totalTime += SystemClock.elapsedRealtime() - startTime
+            isRunning = false
+            timer?.cancel()
+            timer = null
+            updateDisplay()
+        }
     }
 
     fun startShootingSession() {
@@ -51,21 +63,60 @@ class ChronometreManager {
     }
 
     fun recordLapTime() {
-        lapTimes.add(System.currentTimeMillis() - startTime)
+        if (isRunning) {
+            val lapTime = SystemClock.elapsedRealtime() - startTime
+            lapTimes.add(lapTime)
+            totalTime += lapTime
+            startTime = SystemClock.elapsedRealtime() // Réinitialiser pour le prochain tour
+        }
+    }
+
+    fun getTotalTime(): Long {
+        return if (isRunning) {
+            totalTime + (SystemClock.elapsedRealtime() - startTime)
+        } else {
+            totalTime
+        }
+    }
+
+    fun getLapTimes(): List<Long> {
+        return lapTimes.toList()
+    }
+
+    private fun startTimer() {
+        timer = Timer()
+        timer?.scheduleAtFixedRate(object : TimerTask() {
+            override fun run() {
+                currentElapsedTime = if (isRunning) {
+                    totalTime + (SystemClock.elapsedRealtime() - startTime)
+                } else {
+                    totalTime
+                }
+                updateDisplay()
+            }
+        }, 0, 10)
+    }
+
+    fun setInitialTime(time: Long) {
+        totalTime = time
+        updateDisplay()
     }
 
     private fun updateDisplay() {
-        val elapsedTime = System.currentTimeMillis() - startTime
-        val minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTime)
-        val seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTime) % 60
-        val milliseconds = elapsedTime % 1000 / 10
-        chronoTextView?.text = String.format("%02d:%02d:%02d", minutes, seconds, milliseconds)
+        val timeToDisplay = currentElapsedTime
+        val minutes = (timeToDisplay / 60000).toInt()
+        val seconds = ((timeToDisplay % 60000) / 1000).toInt()
+        val milliseconds = (timeToDisplay % 1000).toInt()
+
+        displayView?.post {
+            displayView?.text = String.format("%02d:%02d.%03d", minutes, seconds, milliseconds)
+        }
     }
 
     fun getResults(): TrainingResults {
         return TrainingResults(
-            totalTime = System.currentTimeMillis() - startTime,
-            lapTimes = lapTimes.toList(),
+            totalTime = getTotalTime(),
+            lapTimes = getLapTimes(),
             shootingTimes = shootingTimes.toList()
         )
     }

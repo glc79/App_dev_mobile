@@ -1,7 +1,9 @@
 package com.example.exo4
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import java.util.concurrent.TimeUnit
@@ -23,42 +25,73 @@ class ResultActivity : AppCompatActivity() {
 
         // Récupérer les données de l'intent
         val totalTime = intent.getLongExtra("TOTAL_TIME", 0)
-        val lapTimes = intent.getLongArrayExtra("LAP_TIMES")?.toList() ?: emptyList()
-        val shootingTimes = intent.getLongArrayExtra("SHOOTING_TIMES")?.toList() ?: emptyList()
+        val missedShots = intent.getIntExtra("MISSED_SHOTS", 0)
+        val shootingTime = intent.getLongExtra("TOTAL_SHOOTING_TIME", 0)
+        val runningTime = totalTime - shootingTime
+
+        // Afficher les résultats
+        displayResults(totalTime, runningTime, shootingTime, missedShots)
+
+        // Configuration du bouton retour à l'accueil
+        findViewById<Button>(R.id.button_home).setOnClickListener {
+            // Créer un nouvel intent pour MainActivity
+            val intent = Intent(this, MainActivity::class.java)
+            // Effacer la pile d'activités précédentes
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+        }
 
         // Sauvegarder l'entraînement
         lifecycleScope.launch {
             val training = Training(
-                categoryId = intent.getStringExtra("CATEGORY_ID") ?: "",
+                categoryId = intent.getStringExtra("CATEGORY_ID") ?: "default",
                 date = System.currentTimeMillis(),
                 totalTime = totalTime,
-                runningTimes = lapTimes,
-                shootingTimes = shootingTimes,
-                missedTargets = intent.getIntExtra("MISSED_TARGETS", 0)
+                runningTimes = listOf(runningTime),
+                shootingTimes = listOf(shootingTime),
+                missedTargets = missedShots
             )
             trainingRepository.insertTraining(training)
         }
-
-        displayResults(totalTime, lapTimes, shootingTimes)
     }
 
-    private fun displayResults(totalTime: Long, lapTimes: List<Long>, shootingTimes: List<Long>) {
-        findViewById<TextView>(R.id.total_time_text).text = formatTime(totalTime)
-        
-        val avgLapTime = lapTimes.average()
-        findViewById<TextView>(R.id.running_stats_text).text = 
-            "Temps moyen par tour : ${formatTime(avgLapTime.toLong())}"
+    private fun displayResults(totalTime: Long, runningTime: Long, shootingTime: Long, missedShots: Int) {
+        val totalTimeText = findViewById<TextView>(R.id.total_time_text)
+        val runningStatsText = findViewById<TextView>(R.id.running_stats_text)
+        val shootingStatsText = findViewById<TextView>(R.id.shooting_stats_text)
 
-        val shootingStats = "Tir - Min: ${formatTime(shootingTimes.minOrNull() ?: 0)}\n" +
-                          "Max: ${formatTime(shootingTimes.maxOrNull() ?: 0)}\n" +
-                          "Moyenne: ${formatTime(shootingTimes.average().toLong())}"
-        findViewById<TextView>(R.id.shooting_stats_text).text = shootingStats
-    }
+        // Formater le temps total
+        val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalTime)
+        val totalSeconds = TimeUnit.MILLISECONDS.toSeconds(totalTime) % 60
+        val totalMillis = totalTime % 1000
 
-    private fun formatTime(timeInMillis: Long): String {
-        val minutes = TimeUnit.MILLISECONDS.toMinutes(timeInMillis)
-        val seconds = TimeUnit.MILLISECONDS.toSeconds(timeInMillis) % 60
-        val millis = timeInMillis % 1000 / 10
-        return String.format("%02d:%02d:%02d", minutes, seconds, millis)
+        // Formater le temps de course
+        val runMinutes = TimeUnit.MILLISECONDS.toMinutes(runningTime)
+        val runSeconds = TimeUnit.MILLISECONDS.toSeconds(runningTime) % 60
+        val runMillis = runningTime % 1000
+
+        // Formater le temps de tir
+        val shootMinutes = TimeUnit.MILLISECONDS.toMinutes(shootingTime)
+        val shootSeconds = TimeUnit.MILLISECONDS.toSeconds(shootingTime) % 60
+        val shootMillis = shootingTime % 1000
+
+        totalTimeText.text = String.format(
+            "Temps total : %02d:%02d.%03d",
+            totalMinutes, totalSeconds, totalMillis
+        )
+
+        runningStatsText.text = String.format(
+            "Temps de course : %02d:%02d.%03d",
+            runMinutes, runSeconds, runMillis
+        )
+
+        shootingStatsText.text = String.format(
+            """
+            Statistiques de tir :
+            - Temps de tir : %02d:%02d.%03d
+            - Tirs manqués : %d
+            """.trimIndent(),
+            shootMinutes, shootSeconds, shootMillis, missedShots
+        )
     }
 }
