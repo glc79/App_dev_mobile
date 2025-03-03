@@ -18,6 +18,9 @@ import retrofit2.Response
 
 class CategoryActivity : AppCompatActivity() {
 
+    // Déclarez une variable pour stocker les catégories
+    private lateinit var categories: List<LaserRunCategory>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_category)
@@ -26,7 +29,9 @@ class CategoryActivity : AppCompatActivity() {
         val descriptionText: TextView = findViewById(R.id.description_text)
         val detailsText: TextView = findViewById(R.id.details_text)
 
-        fetchCategories { categories ->
+        // Charge les catégories et configure le spinner
+        fetchCategories { categoriesList ->
+            categories = categoriesList // Affectez les catégories ici
             setupSpinner(spinner, categories) { selectedCategory ->
                 updateDetails(selectedCategory, descriptionText, detailsText)
             }
@@ -80,7 +85,7 @@ class CategoryActivity : AppCompatActivity() {
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
-                // Si rien n'est sélectionné, vous pouvez gérer cela ici si nécessaire.
+                // Gestion si nécessaire
             }
         }
     }
@@ -97,10 +102,25 @@ class CategoryActivity : AppCompatActivity() {
 
     private fun setupNavigation() {
         val buttonCourir: Button = findViewById(R.id.button_courir)
+        val spinner: Spinner = findViewById(R.id.spinner)
 
         buttonCourir.setOnClickListener {
-            val intent = Intent(this, StatistiqueActivity::class.java)
-            startActivity(intent)
+            // Récupère la position de l'élément sélectionné dans le spinner
+            val selectedCategoryPosition = spinner.selectedItemPosition
+            // Vérifie si une catégorie est sélectionnée
+            if (selectedCategoryPosition != AdapterView.INVALID_POSITION) {
+                // Récupère l'objet LaserRunCategory associé à la position
+                val selectedCategory = categories[selectedCategoryPosition] // Utilise la variable de classe
+
+                // Passe les données de la catégorie via Intent
+                val intent = Intent(this, CourirActivity::class.java)
+                intent.putExtra("LAP_COUNT", selectedCategory.lapCount) // Nombre de tours
+                intent.putExtra("INITIAL_DISTANCE", selectedCategory.initialDistance) // Distance initiale
+                intent.putExtra("SHOOT_DISTANCE", selectedCategory.shootDistance) // Distance de tir
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "Veuillez sélectionner une catégorie.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
