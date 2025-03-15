@@ -74,7 +74,6 @@ class StatistiqueActivity : AppCompatActivity() {
                 
                 // Affichage des statistiques
                 averageTimeText.text = "Temps moyen : ${formatTime(avgTime.toLong())}"
-                bestTimeText.text = "Meilleur temps : ${formatTime(bestTime)}"
                 averageMissedText.text = "Moyenne de cibles manquées : %.1f".format(avgMissed)
                 
                 // Vérifier les données pour le débogage
